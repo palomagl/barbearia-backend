@@ -7,7 +7,7 @@ const pool = require('../db');
 // Rota de Cadastro
 router.post('/register', async (req, res) => {
     try {
-        const { nome, email, senha } = req.body;
+        const { nome, email, senha, telefone } = req.body;
 
         if (!nome || !email || !senha) {
             return res.status(400).json({ error: "Preencha todos os campos!" });
@@ -18,8 +18,8 @@ router.post('/register', async (req, res) => {
 
         // Adicionei o 'user' aqui para garantir que ele caia na Dashboard de Cliente
         const novoUsuario = await pool.query(
-            "INSERT INTO usuarios (nome, email, senha, cargo) VALUES ($1, $2, $3, 'user') RETURNING *",
-            [nome, email, senhaCriptografada]
+            "INSERT INTO usuarios (nome, email, senha, cargo, telefone) VALUES ($1, $2, $3, 'user', $4) RETURNING *",
+            [nome, email, senhaCriptografada, telefone] // <-- Adicionamos o telefone aqui no final
         );
 
         res.status(201).json({ 

@@ -68,7 +68,7 @@ router.get('/admin/todos', auth, async (req, res) => {
         }
 
         const result = await pool.query(
-            `SELECT a.*, u.nome as cliente_nome 
+            `SELECT a.*, u.nome as cliente_nome, u.telefone as cliente_telefone 
              FROM agendamentos a 
              JOIN usuarios u ON a.usuario_id = u.id 
              ORDER BY a.data_hora ASC`
