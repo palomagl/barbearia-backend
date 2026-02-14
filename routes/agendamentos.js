@@ -12,12 +12,26 @@ router.post('/novo', auth, async (req, res) => {
         const dataAgendamento = new Date(data_hora);
         const agora = new Date();
 
-        // Validação de horário
+        // Validação de horário futuro
         if (dataAgendamento.getTime() <= agora.getTime()) {
             return res.status(400).json({ 
                 error: "Horário inválido. Escolha um horário futuro!" 
             });
         }
+
+        // --- INÍCIO DA TRAVA DE SEGURANÇA ---
+        // Verifica se já existe um agendamento para o mesmo horário que não esteja cancelado
+        const conflito = await pool.query(
+            "SELECT id FROM agendamentos WHERE data_hora = $1 AND status != 'cancelado'",
+            [data_hora]
+        );
+
+        if (conflito.rows.length > 0) {
+            return res.status(400).json({ 
+                error: "Poxa, esse horário acabou de ser preenchido! Escolha outro. ✂️" 
+            });
+        }
+        // --- FIM DA TRAVA DE SEGURANÇA ---
 
         // Insere com status 'pendente' por padrão
         const novoAgendamento = await pool.query(
@@ -27,7 +41,7 @@ router.post('/novo', auth, async (req, res) => {
 
         res.json(novoAgendamento.rows[0]);
     } catch (err) {
-        console.error(err.message);
+        console.error("Erro no backend:", err.message);
         res.status(500).json({ error: "Erro ao criar agendamento" });
     }
 });
