@@ -99,4 +99,37 @@ router.patch('/concluir/:id', auth, async (req, res) => {
     }
 });
 
+// Rota para cancelar agendamento
+router.delete('/cancelar/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const usuario_id = req.usuario.id; // Pega o ID do cliente logado
+
+        // Busca o agendamento para verificar se pertence ao usuário e o horário
+        const agendamento = await pool.query(
+            "SELECT data_hora FROM agendamentos WHERE id = $1 AND usuario_id = $2",
+            [id, usuario_id]
+        );
+
+        if (agendamento.rows.length === 0) {
+            return res.status(404).json({ error: "Agendamento não encontrado." });
+        }
+
+        // Regra das 2 horas
+        const agora = new Date();
+        const horarioAgendado = new Date(agendamento.rows[0].data_hora);
+        const diffEmHoras = (horarioAgendado - agora) / (1000 * 60 * 60);
+
+        if (diffEmHoras < 2) {
+            return res.status(400).json({ error: "Cancelamento permitido apenas com 2h de antecedência." });
+        }
+
+        await pool.query("DELETE FROM agendamentos WHERE id = $1", [id]);
+        res.json({ mensagem: "Cancelado com sucesso!" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Erro ao cancelar agendamento." });
+    }
+});
 module.exports = router;
